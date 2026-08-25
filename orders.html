@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#087f5b">
+<title>আমার অর্ডারসমূহ | Care Online</title>
+
+<!-- Tailwind CSS & FontAwesome Icons -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{ box-sizing:border-box; margin:0; padding:0; font-family:'Hind Siliguri', Arial, sans-serif; }
+body{ background:#f1f5f9; color:#0f172a; padding-bottom:85px; }
+
+/* Bottom Nav */
+.bottom-nav{ position:fixed; left:0; right:0; bottom:0; height:64px; background:#fff; border-top:1px solid #e2e8f0; display:flex; justify-content:space-around; align-items:center; z-index:500; box-shadow:0 -4px 20px rgba(0,0,0,.06); }
+.nav-btn{ border:0; background:none; color:#64748b; font-size:11px; text-align:center; min-width:60px; transition:.2s; }
+.nav-btn span{ display:block; font-size:20px; margin-bottom:2px; }
+.nav-btn.active{ color:#ff5722; font-weight:bold; }
+</style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="bg-[#087f5b] text-white p-4 sticky top-0 z-50 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="text-white text-xl"><i class="fa-solid fa-arrow-left"></i></a>
+      <div>
+        <h1 class="font-bold text-lg leading-tight">আমার অর্ডারসমূহ</h1>
+        <p class="text-xs text-emerald-100">Care Online ব্যক্তিগত হিস্টোরি ও ট্র্যাকিং</p>
+      </div>
+    </div>
+    <a href="index.html" class="bg-white/20 text-white text-xs px-3 py-1.5 rounded-xl font-bold">
+      + নতুন অর্ডার
+    </a>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-md mx-auto p-4 space-y-4">
+    
+    <!-- 1. CUSTOMER ENGAGEMENT & TRUST BANNER -->
+    <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-4 rounded-2xl shadow-sm space-y-1.5">
+      <div class="flex items-center gap-2 text-amber-300 font-bold text-sm">
+        <i class="fa-solid fa-heart-pulse"></i>
+        <span>Care Online-এ আপনাকে স্বাগতম!</span>
+      </div>
+      <p class="text-xs opacity-95 leading-relaxed">
+        আমাদের সেবা ও ১০০% আসল ঔষধের মান ভালো লাগলে নির্দ্বিধায় পুনরায় অর্ডার করুন। আমরা আছি আপনার সুস্থতায় সার্বক্ষণিক।
+      </p>
+    </div>
+
+    <!-- 2. ORDERS CONTAINER (DYNAMIC VIA AUTH) -->
+    <div id="ordersContainer" class="space-y-4">
+      <p class="text-center text-sm text-gray-400 py-12">আপনার অ্যাকাউন্ট ও অর্ডার লোড হচ্ছে...</p>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <button class="nav-btn" onclick="window.location.href='index.html'">
+      <span><i class="fa-solid fa-house"></i></span>Home
+    </button>
+    <button class="nav-btn active" onclick="window.location.href='orders.html'">
+      <span><i class="fa-solid fa-bag-shopping"></i></span>Orders
+    </button>
+    <button class="nav-btn" onclick="window.location.href='index.html'">
+      <span class="relative inline-block">
+        <i class="fa-solid fa-cart-shopping"></i>
+      </span>Cart
+    </button>
+    <button class="nav-btn" onclick="window.location.href='account.html'">
+      <span><i class="fa-solid fa-user"></i></span>Account
+    </button>
+  </nav>
+
+<script>
+// ==================== SUPABASE INITIALIZATION ====================
+const SUPABASE_URL = localStorage.getItem("care_supabase_url") || "https://your-project.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_g2QOYm3XX9swEUOCQ3fmVw_YhpGU1Kv";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await fetchStrictCustomerOrders();
+});
+
+// Check logged in user and fetch strictly their own orders
+async function fetchStrictCustomerOrders() {
+  const container = document.getElementById("ordersContainer");
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    
+    const userId = session?.user?.id || null;
+    const userPhone = (session?.user?.user_metadata?.phone || session?.user?.phone || localStorage.getItem("care_last_phone") || "").replace(/[^0-9]/g, '');
+    const userEmail = session?.user?.email || "";
+
+    if (!session && !userPhone) {
+      container.innerHTML = `
+        <div class="bg-white rounded-3xl p-8 text-center border shadow-sm space-y-3 mt-4">
+          <div class="w-16 h-16 bg-emerald-50 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-3xl">
+            <i class="fa-solid fa-user-lock"></i>
+          </div>
+          <h3 class="text-base font-bold text-gray-800">অর্ডার দেখতে লগইন করুন</h3>
+          <p class="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
+            আপনার ব্যক্তিগত সুরক্ষার জন্য শুধুমাত্র আপনার নিজস্ব অ্যাকাউন্টের অর্ডারগুলো এখানে প্রদর্শিত হবে।
+          </p>
+          <div class="pt-2">
+            <a href="account.html" class="inline-block bg-[#087f5b] hover:bg-[#06694a] text-white text-sm font-bold py-2.5 px-6 rounded-xl shadow">
+              লগইন বা রেজিস্ট্রেশন করুন →
+            </a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const { data: allOrders, error } = await sb
+      .from("orders")
+      .select("*, order_items(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Filter strictly for this user
+    const myOrders = (allOrders || []).filter(o => {
+      if (userId && o.user_id === userId) return true;
+      if (userPhone && o.customer_phone && o.customer_phone.replace(/[^0-9]/g, '').includes(userPhone)) return true;
+      if (userEmail && o.customer_email && o.customer_email.toLowerCase() === userEmail.toLowerCase()) return true;
+      return false;
+    });
+
+    if (myOrders.length === 0) {
+      container.innerHTML = `
+        <div class="bg-white rounded-3xl p-8 text-center border shadow-sm space-y-3 mt-4">
+          <div class="w-16 h-16 bg-slate-100 text-gray-400 rounded-full flex items-center justify-center mx-auto text-3xl">
+            <i class="fa-solid fa-box-open"></i>
+          </div>
+          <h3 class="text-base font-bold text-gray-800">আপনার কোনো অর্ডার পাওয়া যায়নি</h3>
+          <p class="text-xs text-gray-500">আপনার এই অ্যাকাউন্টে এখনো কোনো অর্ডার সক্রিয় নেই।</p>
+          <div class="pt-2">
+            <a href="index.html" class="inline-block bg-[#087f5b] text-white text-sm font-bold py-2.5 px-6 rounded-xl shadow">
+              🛒 এখনই শপিং করুন
+            </a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    renderCustomerOrders(myOrders);
+  } catch (err) {
+    console.error("Order fetch error:", err);
+    container.innerHTML = `<p class="text-center text-xs text-red-500 py-8">অর্ডার লোড করতে সমস্যা হয়েছে</p>`;
+  }
+}
+
+// Generate Visual Stepper
+function generateOrderTrackerHTML(status) {
+  if (status === 'cancelled') {
+    return `
+      <div class="bg-red-50 border border-red-200 p-2.5 rounded-2xl text-center">
+        <span class="font-bold text-red-700 text-xs">❌ এই অর্ডারটি বাতিল করা হয়েছে</span>
+      </div>
+    `;
+  }
+
+  let step = 1;
+  if (status === 'confirmed' || status === 'processing') step = 2;
+  else if (status === 'shipped') step = 3;
+  else if (status === 'delivered') step = 4;
+
+  const activeColor = "bg-emerald-600 text-white font-bold";
+  const inactiveColor = "bg-slate-200 text-gray-400";
+  const activeLine = "bg-emerald-600";
+
+  return `
+    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+      <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 mb-1">
+        <span class="${step >= 1 ? 'text-emerald-800 font-bold' : ''}">১. অর্ডার গৃহীত</span>
+        <span class="${step >= 2 ? 'text-emerald-800 font-bold' : ''}">২. কনফার্মড</span>
+        <span class="${step >= 3 ? 'text-emerald-800 font-bold' : ''}">৩. পথে আছে</span>
+        <span class="${step >= 4 ? 'text-emerald-800 font-bold' : ''}">৪. ডেলিভার্ড</span>
+      </div>
+
+      <div class="flex items-center justify-between relative px-2">
+        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-200 -z-0">
+          <div class="h-full ${activeLine} transition-all duration-500" style="width: ${(step - 1) * 33.33}%"></div>
+        </div>
+
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs z-10 ${step >= 1 ? activeColor : inactiveColor} shadow-sm">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs z-10 ${step >= 2 ? activeColor : inactiveColor} shadow-sm">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs z-10 ${step >= 3 ? activeColor : inactiveColor} shadow-sm">
+          <i class="fa-solid fa-truck-fast"></i>
+        </div>
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs z-10 ${step >= 4 ? activeColor : inactiveColor} shadow-sm">
+          <i class="fa-solid fa-house-circle-check"></i>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Render Order Cards
+function renderCustomerOrders(orders) {
+  const container = document.getElementById("ordersContainer");
+
+  container.innerHTML = orders.map(o => {
+    let statusText = "পেন্ডিং (যাচাই চলছে)";
+    let statusBadge = "bg-amber-100 text-amber-900 border-amber-300";
+
+    if (o.order_status === 'confirmed' || o.order_status === 'processing') {
+      statusText = "প্রসেসিং হচ্ছে ✓";
+      statusBadge = "bg-blue-100 text-blue-900 border-blue-300";
+    } else if (o.order_status === 'shipped') {
+      statusText = "ডেলিভারির পথে আছে 🚚";
+      statusBadge = "bg-purple-100 text-purple-900 border-purple-300";
+    } else if (o.order_status === 'delivered') {
+      statusText = "ডেলিভারি সম্পন্ন হয়েছে 🏠";
+      statusBadge = "bg-emerald-100 text-emerald-900 border-emerald-300";
+    } else if (o.order_status === 'cancelled') {
+      statusText = "অর্ডার বাতিল ✕";
+      statusBadge = "bg-red-100 text-red-900 border-red-300";
+    }
+
+    const d = new Date(o.created_at);
+    const dateFormatted = d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
+    const timeFormatted = d.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const waMessage = encodeURIComponent(`হ্যালো Care Online! আমি আমার অর্ডার #${o.order_number} সম্পর্কে জানতে চাই।`);
+    const waLink = `https://wa.me/8801892291817?text=${waMessage}`;
+
+    return `
+      <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm text-sm space-y-3.5">
+        
+        <!-- Header: Order ID & Live Status -->
+        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+          <div>
+            <span class="font-bold text-gray-900 text-base font-mono">#${o.order_number}</span>
+            <p class="text-xs text-gray-600 mt-0.5">📅 <strong>${dateFormatted}</strong> | ⏰ <strong>${timeFormatted}</strong></p>
+          </div>
+          <span class="font-bold text-xs px-3 py-1 rounded-full border ${statusBadge}">
+            ${statusText}
+          </span>
+        </div>
+
+        <!-- 🚚 LIVE VISUAL ORDER TRACKER -->
+        ${generateOrderTrackerHTML(o.order_status)}
+
+        <!-- 🛍️ ORDERED PRODUCTS LIST WITH BIGGER IMAGES -->
+        <div class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+          <strong class="text-xs text-gray-700 block mb-1">🛍️ আপনার অর্ডারকৃত পণ্যসমূহ:</strong>
+          ${(o.order_items || []).map(item => `
+            <div class="flex items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-100 shadow-xs">
+              <div class="flex items-center gap-3">
+                <div class="w-16 h-16 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center">
+                  <img src="${item.product_image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200'}" class="w-full h-full object-cover">
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-900 text-sm leading-snug">${item.product_name}</h4>
+                  <p class="text-xs text-gray-500 mt-1">৳${item.unit_price} × <span class="font-bold text-gray-800">${item.quantity} পিস</span></p>
+                </div>
+              </div>
+              <strong class="text-emerald-800 text-base whitespace-nowrap">৳${item.subtotal}</strong>
+            </div>
+          `).join("")}
+        </div>
+
+        <!-- 📋 FULL CUSTOMER DELIVERY & PAYMENT DETAILS -->
+        <div class="space-y-2 text-xs bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 text-gray-700">
+          <div class="border-b border-emerald-100 pb-2 space-y-1">
+            <strong class="text-emerald-900 text-xs block mb-1">📍 ডেলিভারি ও গ্রাহকের তথ্য:</strong>
+            <p><strong>নাম:</strong> ${o.customer_name || 'গ্রাহক'}</p>
+            <p><strong>মোবাইল:</strong> ${o.customer_phone || 'N/A'}</p>
+            <p><strong>ডেলিভারি ঠিকানা:</strong> ${o.delivery_address} (${o.district})</p>
+            <p><strong>পেমেন্ট মাধ্যম:</strong> ${o.payment_method}</p>
+            ${o.transaction_id && o.transaction_id !== 'N/A' ? `<p class="font-bold text-emerald-900 bg-white p-1 rounded-lg border border-emerald-200 mt-1">${o.transaction_id}</p>` : ''}
+          </div>
+
+          <!-- Price Calculation Breakdown -->
+          <div class="space-y-1 pt-1">
+            <div class="flex justify-between"><span>প্রোডাক্ট সাবটোটাল:</span><strong class="text-gray-800">৳${o.subtotal || o.total}</strong></div>
+            <div class="flex justify-between text-emerald-800"><span>ডেলিভারি চার্জ (${o.district}):</span><strong>${Number(o.delivery_fee) === 0 ? 'ফ্রি (৳০)' : '৳' + o.delivery_fee}</strong></div>
+            <div class="flex justify-between items-center text-sm font-bold text-gray-900 border-t border-emerald-200/60 pt-2 mt-1">
+              <span>সর্বমোট প্রদেয় বিল:</span>
+              <strong class="text-lg text-emerald-800">৳${o.total}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 💬 DIRECT WHATSAPP SUPPORT BUTTON -->
+        <div>
+          <a href="${waLink}" target="_blank" class="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow text-xs transition">
+            <i class="fa-brands fa-whatsapp text-base"></i>
+            <span>এই অর্ডারটি নিয়ে WhatsApp-এ কথা বলুন</span>
+          </a>
+        </div>
+
+      </div>
+    `;
+  }).join("");
+}
+</script>
+</body>
+</html>

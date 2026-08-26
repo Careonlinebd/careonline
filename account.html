@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#087f5b">
+  <title>My Account | Care Online Pharmacy</title>
+
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', Arial, sans-serif; }
+    body { background: #f8fafc; color: #1e293b; padding-bottom: 80px; }
+    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: 64px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; z-index: 500; box-shadow: 0 -4px 20px rgba(0,0,0,.06); }
+    .nav-btn { border: 0; background: none; color: #64748b; font-size: 11px; text-align: center; min-width: 60px; }
+    .nav-btn span { display: block; font-size: 20px; margin-bottom: 2px; }
+    .nav-btn.active { color: #ff5722; font-weight: bold; }
+    .primary-btn { width: 100%; border: 0; background: #087f5b; color: #fff; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: .2s; }
+    .primary-btn:hover { background: #06694a; }
+  </style>
+</head>
+
+<body>
+
+  <header class="bg-[#087f5b] text-white p-4 sticky top-0 z-50 flex items-center justify-between shadow">
+    <div class="flex items-center gap-2.5">
+      <a href="index.html" class="text-white text-lg"><i class="fa-solid fa-arrow-left"></i></a>
+      <div>
+        <h1 class="font-bold text-base leading-tight">আমার অ্যাকাউন্ট (Profile)</h1>
+        <p class="text-[10px] opacity-90">Care Online | আপনার স্বাস্থ্য, আমাদের দায়িত্ব</p>
+      </div>
+    </div>
+    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">
+      <i class="fa-solid fa-user-shield"></i>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+    
+    <!-- প্রোফাইল ড্যাশবোর্ড (লগইন থাকলে) -->
+    <div id="userProfileCard" class="hidden bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl p-4 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-xl font-bold border-2 border-white/40">
+            <span id="profAvatar">👤</span>
+          </div>
+          <div>
+            <h2 id="profName" class="font-bold text-base leading-tight">Customer Name</h2>
+            <p id="profPhone" class="text-xs opacity-90 mt-0.5">📞 018XXXXXXXX</p>
+            <span class="inline-block bg-white/20 text-[10px] px-2 py-0.5 rounded font-mono mt-1">✓ ভেরিফাইড মেম্বার</span>
+          </div>
+        </div>
+        <button onclick="handleLogout()" class="bg-red-500/80 hover:bg-red-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow">
+          Logout
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/20">
+        <a href="orders.html" class="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-center text-xs font-bold block">
+          📦 আমার অর্ডারসমূহ
+        </a>
+        <a href="index.html" class="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-center text-xs font-bold block">
+          🛒 ঔষধ কেনাকাটা
+        </a>
+      </div>
+    </div>
+
+    <!-- লগইন ও রেজিস্ট্রেশন ফর্ম -->
+    <div id="authSection" class="bg-white rounded-2xl p-4 border shadow-sm space-y-3">
+      
+      <div class="flex bg-slate-100 p-1 rounded-xl font-bold text-xs">
+        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="w-1/2 py-2 rounded-lg text-gray-600">লগইন</button>
+        <button id="tabRegBtn" onclick="switchAuthTab('reg')" class="w-1/2 py-2 rounded-lg bg-emerald-600 text-white shadow-sm">রেজিস্ট্রেশন</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleCustomerLogin(event)" class="hidden space-y-2.5 text-xs">
+        <div>
+          <label class="font-bold text-gray-700">মোবাইল নম্বর বা ইমেইল</label>
+          <input id="loginIdent" required placeholder="018XXXXXXXX" class="w-full border rounded-xl p-2.5 mt-1 outline-none">
+        </div>
+        <div>
+          <label class="font-bold text-gray-700">গোপন পাসওয়ার্ড</label>
+          <input id="loginPass" type="password" required placeholder="Password" class="w-full border rounded-xl p-2.5 mt-1 outline-none">
+        </div>
+        <button id="loginSubmitBtn" type="submit" class="primary-btn mt-2">লগইন করুন →</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="regForm" onsubmit="handleInitiateRegistration(event)" class="space-y-2.5 text-xs">
+        <div>
+          <label class="font-bold text-gray-700">আপনার পূর্ণ নাম</label>
+          <input id="regName" required placeholder="যেমন: মোঃ করিম" class="w-full border rounded-xl p-2.5 mt-1 outline-none">
+        </div>
+        <div>
+          <label class="font-bold text-gray-700">১১ ডিজিটের মোবাইল নম্বর</label>
+          <input id="regPhone" type="tel" required placeholder="018XXXXXXXX" class="w-full border rounded-xl p-2.5 mt-1 outline-none">
+        </div>
+        <div>
+          <label class="font-bold text-gray-700">ইমেইল (ঐচ্ছিক)</label>
+          <input id="regEmail" type="email" placeholder="name@gmail.com" class="w-full border rounded-xl p-2.5 mt-1 outline-none">
+        </div>
+        <div>
+          <label class="font-bold text-gray-700">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label>
+          <input id="regPass" type="password" required placeholder="পাসওয়ার্ড লিখুন" class="w-full border rounded-xl p-2.5 mt-1 outline-none">
+        </div>
+        <button id="regSubmitBtn" type="submit" class="primary-btn mt-2">📲 OTP কোড পাঠান</button>
+      </form>
+
+      <!-- OTP Step -->
+      <div id="otpStep" class="hidden text-center space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs">
+        <p class="font-bold text-amber-900">আপনার ভেরিফিকেশন কোড (OTP):</p>
+        <h3 id="generatedOtpDisplay" class="text-3xl font-bold tracking-widest text-emerald-800 font-mono">123456</h3>
+        <p class="text-[11px] text-gray-500">নিচের বক্সে এই কোডটি লিখে ভেরিফাই করুন:</p>
+        <input id="inputOtp" type="number" placeholder="• • • • • •" class="w-full text-center text-lg tracking-widest border rounded-xl p-2.5 bg-white outline-none font-bold">
+        <button onclick="handleVerifyOtpAndSignUp()" class="primary-btn">✓ OTP ভেরিফাই সম্পন্ন করুন</button>
+      </div>
+
+    </div>
+
+    <!-- ট্রাস্ট সেকশন -->
+    <div class="bg-white rounded-2xl p-4 border shadow-sm space-y-3">
+      <div class="flex items-center gap-2 border-b pb-2">
+        <span class="text-emerald-700 text-lg"><i class="fa-solid fa-certificate"></i></span>
+        <h3 class="font-bold text-xs text-gray-800">কেন Care Online-এ আস্থা রাখবেন?</h3>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-[11px]">
+        <div class="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100 flex items-center gap-2">
+          <span class="text-emerald-700 text-base"><i class="fa-solid fa-shield-heart"></i></span>
+          <span class="font-bold text-emerald-950">১০০% আসল ঔষধের গ্যারান্টি</span>
+        </div>
+
+        <div class="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100 flex items-center gap-2">
+          <span class="text-emerald-700 text-base"><i class="fa-solid fa-truck-fast"></i></span>
+          <span class="font-bold text-emerald-950">দিনাজপুর সদরে ফ্রি ডেলিভারি</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- সাপোর্ট লিংক -->
+    <div class="bg-white rounded-2xl p-4 border shadow-sm space-y-2.5 text-xs">
+      <h3 class="font-bold text-xs text-gray-800 border-b pb-2">যোগাযোগ ও সার্বক্ষণিক সহায়তা</h3>
+      
+      <a href="https://wa.me/8801892291817" target="_blank" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border">
+        <span class="flex items-center gap-2.5 font-bold text-gray-700">
+          <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i> 
+          <span>WhatsApp কাস্টমার সাপোর্ট</span>
+        </span>
+        <i class="fa-solid fa-chevron-right text-gray-400"></i>
+      </a>
+
+      <a href="tel:01892291817" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border">
+        <span class="flex items-center gap-2.5 font-bold text-gray-700">
+          <i class="fa-solid fa-phone-volume text-emerald-700 text-base"></i> 
+          <span>হটলাইন কল: 01892291817</span>
+        </span>
+        <i class="fa-solid fa-chevron-right text-gray-400"></i>
+      </a>
+    </div>
+
+  </main>
+
+  <!-- বটম নেভিগেশন -->
+  <nav class="bottom-nav">
+    <button class="nav-btn" onclick="window.location.href='index.html'">
+      <span><i class="fa-solid fa-house"></i></span>Home
+    </button>
+    <button class="nav-btn" onclick="window.location.href='orders.html'">
+      <span><i class="fa-solid fa-bag-shopping"></i></span>Orders
+    </button>
+    <button class="nav-btn" onclick="window.location.href='index.html'">
+      <span class="relative inline-block"><i class="fa-solid fa-cart-shopping"></i></span>Cart
+    </button>
+    <button class="nav-btn active" onclick="window.location.href='account.html'">
+      <span><i class="fa-solid fa-user"></i></span>Account
+    </button>
+  </nav>
+
+  <script>
+    const SUPABASE_URL = "https://vajqviaizmvwaemfgcgx.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_g2QOYm3XX9swEUOCQ3fmVw_YhpGU1Kv";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let generatedOtpCode = "";
+    let tempSignupData = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await checkUserAuthState();
+    });
+
+    async function checkUserAuthState() {
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && session.user) {
+          showLoggedInView(session.user);
+        } else {
+          showGuestView();
+        }
+      } catch (err) {
+        showGuestView();
+      }
+    }
+
+    function showLoggedInView(user) {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("userProfileCard").classList.remove("hidden");
+
+      const name = user.user_metadata?.full_name || "Customer";
+      const phone = user.user_metadata?.phone || user.email;
+
+      document.getElementById("profName").textContent = name;
+      document.getElementById("profPhone").textContent = "📞 " + phone;
+      document.getElementById("profAvatar").textContent = name[0].toUpperCase();
+    }
+
+    function showGuestView() {
+      document.getElementById("authSection").classList.remove("hidden");
+      document.getElementById("userProfileCard").classList.add("hidden");
+    }
+
+    function switchAuthTab(tab) {
+      const loginForm = document.getElementById("loginForm");
+      const regForm = document.getElementById("regForm");
+      const otpStep = document.getElementById("otpStep");
+      const tabLoginBtn = document.getElementById("tabLoginBtn");
+      const tabRegBtn = document.getElementById("tabRegBtn");
+
+      otpStep.classList.add("hidden");
+
+      if (tab === 'login') {
+        loginForm.classList.remove("hidden");
+        regForm.classList.add("hidden");
+        tabLoginBtn.className = "w-1/2 py-2 rounded-lg bg-emerald-600 text-white shadow-sm";
+        tabRegBtn.className = "w-1/2 py-2 rounded-lg text-gray-600";
+      } else {
+        loginForm.classList.add("hidden");
+        regForm.classList.remove("hidden");
+        tabRegBtn.className = "w-1/2 py-2 rounded-lg bg-emerald-600 text-white shadow-sm";
+        tabLoginBtn.className = "w-1/2 py-2 rounded-lg text-gray-600";
+      }
+    }
+
+    async function handleCustomerLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById("loginSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "লগইন হচ্ছে...";
+
+      let ident = document.getElementById("loginIdent").value.trim();
+      const pass = document.getElementById("loginPass").value;
+      if (!ident.includes("@")) ident = `${ident.replace(/[^0-9]/g, '')}@careonline.local`;
+
+      try {
+        const { data, error } = await sb.auth.signInWithPassword({ email: ident, password: pass });
+        if (error) throw error;
+        alert("🎉 স্বাগতম! আপনার লগইন সফল হয়েছে।");
+        window.location.reload();
+      } catch (err) {
+        alert("লগইন ব্যর্থ: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "লগইন করুন →";
+      }
+    }
+
+    // 📲 OTP কোড জেনারেশন
+    function handleInitiateRegistration(e) {
+      e.preventDefault();
+      const name = document.getElementById("regName").value.trim();
+      const phone = document.getElementById("regPhone").value.trim().replace(/[^0-9]/g, '');
+      const email = document.getElementById("regEmail")?.value.trim();
+      const pass = document.getElementById("regPass").value;
+
+      if (phone.length !== 11 || !phone.startsWith("01")) {
+        alert("❌ সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 018XXXXXXXX)!");
+        return;
+      }
+      if (pass.length < 6) {
+        alert("❌ পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে!");
+        return;
+      }
+
+      generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      tempSignupData = { name, phone, email, pass };
+
+      document.getElementById("generatedOtpDisplay").textContent = generatedOtpCode;
+      document.getElementById("regForm").classList.add("hidden");
+      document.getElementById("otpStep").classList.remove("hidden");
+    }
+
+    async function handleVerifyOtpAndSignUp() {
+      const entered = document.getElementById("inputOtp").value.trim();
+      if (entered !== generatedOtpCode) {
+        alert("❌ ভুল OTP কোড! আবার চেষ্টা করুন।");
+        return;
+      }
+
+      try {
+        const email = tempSignupData.email || `${tempSignupData.phone}@careonline.local`;
+        const { data, error } = await sb.auth.signUp({
+          email: email,
+          password: tempSignupData.pass,
+          options: { data: { full_name: tempSignupData.name, phone: tempSignupData.phone } }
+        });
+
+        if (error) {
+          if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+            alert("⚠️ এই মোবাইল নম্বরে ইতিমধ্যে অ্যাকাউন্ট আছে! পাসওয়ার্ড দিয়ে লগইন করুন।");
+            switchAuthTab('login');
+            document.getElementById("loginIdent").value = tempSignupData.phone;
+            return;
+          }
+          throw error;
+        }
+
+        await sb.from("profiles").upsert({ 
+          id: data.user.id, 
+          full_name: tempSignupData.name, 
+          phone: tempSignupData.phone, 
+          email: email,
+          role: "customer", 
+          status: "active" 
+        });
+
+        await sb.auth.signInWithPassword({ email: email, password: tempSignupData.pass });
+
+        alert("🎉 অভিনন্দন! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।");
+        window.location.reload();
+      } catch (err) {
+        alert("রেজিস্ট্রেশন ত্রুটি: " + err.message);
+      }
+    }
+
+    async function handleLogout() {
+      await sb.auth.signOut();
+      alert("লগআউট সম্পন্ন হয়েছে।");
+      window.location.reload();
+    }
+  </script>
+</body>
+</html>
